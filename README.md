@@ -80,23 +80,50 @@ public/
 2. Upload the `dist/` folder contents to your web server
 3. For Apache, the included `.htaccess` handles routing and caching
 
-### Option 2: Local Testing with HTTPS (for PWA features)
+### Option 2: Local Testing with HTTPS via uvicorn + ngrok (Recommended for Development)
 
+This project includes a `server.py` for quick local testing with HTTPS support (required for PWA features like service worker and install prompt).
+
+#### Prerequisites
+- Python with conda (miniforge3)
+- ngrok installed (`brew install ngrok` or download from ngrok.com)
+
+#### Quick Start (One Command)
+
+**Terminal 1 - Start uvicorn server:**
 ```bash
-# Install dependencies
-pip install uvicorn starlette
-
-# Activate conda environment (if using)
-conda activate base
-
-# Start the server
+source ~/miniforge3/bin/activate base && \
+pip install uvicorn starlette --quiet && \
+cd "/Users/ythuang/Desktop/Asia Pathogenomics/Programs/PWA" && \
 uvicorn server:app --host 0.0.0.0 --port 8000
+```
 
-# In another terminal, start ngrok for HTTPS
+**Terminal 2 - Start ngrok tunnel:**
+```bash
 ngrok http 8000
 ```
 
-Use the ngrok HTTPS URL to test PWA installation and offline features.
+#### What This Does
+1. Activates the conda base environment
+2. Installs uvicorn and starlette (if not already installed)
+3. Serves the `dist/` folder at http://localhost:8000
+4. ngrok provides an HTTPS URL (e.g., `https://xxxx.ngrok-free.app`) for testing PWA features on mobile devices
+
+#### Development Workflow
+```bash
+# 1. Make changes to source code
+# 2. Rebuild the app
+npm run build
+
+# 3. The uvicorn server automatically serves the new dist/ files
+# 4. Refresh the ngrok URL in browser (may need to clear cache for PWA updates)
+```
+
+#### Troubleshooting PWA Cache on iOS
+If the PWA on iPhone doesn't update after rebuild:
+1. Delete the PWA from home screen
+2. Clear Safari website data: Settings → Safari → Advanced → Website Data → Delete
+3. Re-add the PWA from Safari
 
 ### Option 3: GitHub Pages
 
