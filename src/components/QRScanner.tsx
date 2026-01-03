@@ -8,10 +8,12 @@ interface QRScannerProps {
 
 export function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
   const [isScanning, setIsScanning] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cameraFacing, setCameraFacing] = useState<"environment" | "user">("environment");
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const hasStartedRef = useRef(false);
 
   const stopScanner = useCallback(async () => {
     if (scannerRef.current) {
@@ -30,6 +32,7 @@ export function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
     if (!containerRef.current) return;
     
     setError(null);
+    setIsInitializing(true);
     
     try {
       // Clean up existing scanner
@@ -59,6 +62,7 @@ export function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
       );
       
       setIsScanning(true);
+      setIsInitializing(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to start camera";
       
@@ -70,6 +74,7 @@ export function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
         setError(`無法啟動相機: ${message}\nFailed to start camera: ${message}`);
       }
       setIsScanning(false);
+      setIsInitializing(false);
     }
   }, [cameraFacing, onScanSuccess, stopScanner]);
 
@@ -78,9 +83,21 @@ export function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
     setCameraFacing(newFacing);
   };
 
-  // Restart scanner when camera facing changes
+  // Auto-start camera on mount
   useEffect(() => {
-    if (isScanning) {
+    if (!hasStartedRef.current) {
+      hasStartedRef.current = true;
+      // Small delay to ensure DOM is ready
+      const timer = setTimeout(() => {
+        startScanner();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  // Restart scanner when camera facing changes (but not on first mount)
+  useEffect(() => {
+    if (hasStartedRef.current && isScanning) {
       startScanner();
     }
   }, [cameraFacing]);
@@ -95,6 +112,11 @@ export function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
   const handleClose = async () => {
     await stopScanner();
     onClose();
+  };
+
+  const handleRetry = () => {
+    setError(null);
+    startScanner();
   };
 
   return (
@@ -131,21 +153,23 @@ export function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
           >
             <div id="qr-reader" className="w-full h-full" />
             
-            {!isScanning && !error && (
+            {/* Loading state */}
+            {isInitializing && !error && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[var(--color-surface)]">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[var(--color-primary-500)] to-[var(--color-accent)] flex items-center justify-center animate-pulse">
-                  <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[var(--color-primary-500)] to-[var(--color-accent)] flex items-center justify-center">
+                  <svg className="w-10 h-10 text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                 </div>
                 <p className="text-slate-400 text-sm text-center">
-                  點擊下方按鈕啟動相機<br />
-                  Tap the button below to start camera
+                  正在啟動相機...<br />
+                  Starting camera...
                 </p>
               </div>
             )}
 
+            {/* Error state */}
             {error && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[var(--color-surface)] p-6">
                 <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center">
@@ -154,11 +178,17 @@ export function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
                   </svg>
                 </div>
                 <p className="text-red-400 text-sm text-center whitespace-pre-line">{error}</p>
+                <button
+                  onClick={handleRetry}
+                  className="btn btn-secondary py-2 px-4 text-sm"
+                >
+                  重試 / Retry
+                </button>
               </div>
             )}
 
             {/* Scanning overlay */}
-            {isScanning && (
+            {isScanning && !isInitializing && (
               <div className="absolute inset-0 pointer-events-none">
                 {/* Corner markers */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[250px]">
@@ -180,26 +210,17 @@ export function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
 
           {/* Instructions */}
           <p className="text-center text-sm text-slate-400 mt-4">
-            {isScanning 
-              ? "將 QR 碼對準框內 / Align QR code within the frame" 
-              : "準備就緒 / Ready to scan"}
+            {isInitializing 
+              ? "請稍候... / Please wait..."
+              : isScanning 
+                ? "將 QR 碼對準框內 / Align QR code within the frame" 
+                : "準備就緒 / Ready to scan"}
           </p>
         </div>
 
         {/* Actions */}
         <div className="p-4 pt-0 flex gap-3">
-          {!isScanning ? (
-            <button
-              onClick={startScanner}
-              className="btn btn-primary flex-1"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              啟動相機 / Start Camera
-            </button>
-          ) : (
+          {isScanning ? (
             <>
               <button
                 onClick={toggleCamera}
@@ -211,20 +232,28 @@ export function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
                 切換鏡頭 / Switch
               </button>
               <button
-                onClick={stopScanner}
+                onClick={handleClose}
                 className="btn btn-danger flex-1"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
-                停止 / Stop
+                關閉 / Close
               </button>
             </>
+          ) : (
+            <button
+              onClick={handleClose}
+              className="btn btn-secondary flex-1"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              關閉 / Close
+            </button>
           )}
         </div>
       </div>
     </div>
   );
 }
-
