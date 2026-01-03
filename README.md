@@ -1,6 +1,6 @@
-# 電子簽名表單 PWA Demo
+# PWA Demo - 電子簽名 & QR 碼掃描
 
-A Progressive Web App (PWA) demo featuring a digital signature form with handwritten signature capture (電子手寫簽名). Built with React, TypeScript, and Tailwind CSS.
+A Progressive Web App (PWA) demo featuring a **QR code scanner** and **digital signature form** with handwritten signature capture (電子手寫簽名). Built with React, TypeScript, and Tailwind CSS.
 
 ![PWA Badge](https://img.shields.io/badge/PWA-Ready-5A0FC8?logo=pwa)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
@@ -9,14 +9,26 @@ A Progressive Web App (PWA) demo featuring a digital signature form with handwri
 
 ## ✨ Features
 
-- **📝 Form Fields**: Name input, gender selection (Male/Female), 4-option checkbox group
-- **✍️ Handwritten Signature**: Canvas-based signature capture supporting both touch and mouse
-- **✅ Form Validation**: Real-time validation with bilingual error messages (中文/English)
-- **💾 Auto-save Draft**: Automatically saves form data to localStorage
-- **👁️ Preview Dialog**: Shows form summary with JSON output and signature preview
-- **📱 Responsive Design**: Mobile-first RWD layout
-- **🌙 Dark Theme**: Modern glassmorphism UI with gradient backgrounds
-- **📲 PWA Support**: Installable, works offline, service worker caching
+### 📷 QR Code Scanner
+- **Camera-based scanning**: Uses device camera to scan QR codes in real-time
+- **Front/Back camera toggle**: Switch between front and rear cameras
+- **Scan history**: Keeps track of the last 10 scanned codes
+- **Auto-detect URLs**: Offers "Open Link" button for URL QR codes
+- **Copy to clipboard**: One-tap copy of scanned content
+- **Bilingual UI**: Chinese/English interface
+
+### 📝 Digital Signature Form
+- **Form Fields**: Name input, gender selection (Male/Female), 4-option checkbox group
+- **Handwritten Signature (電子手寫簽名)**: Canvas-based signature capture supporting both touch and mouse
+- **Form Validation**: Real-time validation with bilingual error messages (中文/English)
+- **Auto-save Draft**: Automatically saves form data to localStorage
+- **Preview Dialog**: Shows form summary with JSON output and signature preview
+
+### 📲 PWA Features
+- **Installable**: Add to home screen on mobile devices
+- **Offline Support**: Works offline with service worker caching
+- **Responsive Design**: Mobile-first RWD layout
+- **Dark Theme**: Modern glassmorphism UI with gradient backgrounds
 
 ## 🚀 Quick Start
 
@@ -54,6 +66,8 @@ The production files will be in the `dist/` folder.
 ```
 src/
 ├── components/
+│   ├── QRScanner.tsx       # Camera-based QR code scanner modal
+│   ├── QRScannerDemo.tsx   # QR scanner demo with history & actions
 │   ├── FormCard.tsx        # Main form with all fields
 │   ├── SignatureField.tsx  # Handwritten signature canvas
 │   └── PreviewDialog.tsx   # JSON + signature preview modal
@@ -61,7 +75,7 @@ src/
 │   ├── types.ts            # TypeScript interfaces
 │   ├── validation.ts       # Zod schema for form validation
 │   └── storage.ts          # localStorage draft save/restore
-├── App.tsx                 # Main layout
+├── App.tsx                 # Main layout with tab navigation
 ├── main.tsx                # Entry point
 └── index.css               # Tailwind v4 + custom theme
 
@@ -70,6 +84,8 @@ public/
 ├── pwa-512x512.png         # PWA icon (512x512)
 ├── apple-touch-icon.png    # iOS icon
 └── icon.svg                # Vector icon source
+
+server.py                   # Uvicorn server for local HTTPS testing
 ```
 
 ## 🖥️ Deployment
@@ -82,7 +98,7 @@ public/
 
 ### Option 2: Local Testing with HTTPS via uvicorn + ngrok (Recommended for Development)
 
-This project includes a `server.py` for quick local testing with HTTPS support (required for PWA features like service worker and install prompt).
+This project includes a `server.py` for quick local testing with HTTPS support (required for PWA features like service worker, install prompt, and camera access).
 
 #### Prerequisites
 - Python with conda (miniforge3)
@@ -164,6 +180,7 @@ Edit `src/lib/validation.ts` to customize form validation with Zod.
 | Offline Mode | DevTools → Network → Offline, then refresh |
 | Service Worker | DevTools → Application → Service Workers |
 | Manifest | DevTools → Application → Manifest |
+| Camera Access | Requires HTTPS (use ngrok for local testing) |
 
 ## 🛠️ Tech Stack
 
@@ -173,6 +190,7 @@ Edit `src/lib/validation.ts` to customize form validation with Zod.
 | [React 19](https://react.dev/) | UI framework |
 | [TypeScript](https://www.typescriptlang.org/) | Type safety |
 | [Tailwind CSS 4](https://tailwindcss.com/) | Styling |
+| [html5-qrcode](https://github.com/mebjas/html5-qrcode) | QR code scanning |
 | [react-hook-form](https://react-hook-form.com/) | Form handling |
 | [Zod](https://zod.dev/) | Schema validation |
 | [react-signature-canvas](https://github.com/agilgur5/react-signature-canvas) | Signature capture |
